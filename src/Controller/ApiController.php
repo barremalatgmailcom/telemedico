@@ -10,9 +10,9 @@ class ApiController extends AbstractController
 {
 
     /**
-     * @Route("/api/", name="create")
+     * @Route("/api", name="create")
      */
-    public function index()
+    public function index(): Response
     {
         $methodsAvailable = get_class_methods(self::class);
         return $this->formatOutput(['ok' => 1, 'collection' => $methodsAvailable]);
@@ -21,7 +21,7 @@ class ApiController extends AbstractController
     /**
      * @Route("/api/create", name="create")
      */
-    public function create()
+    public function create(): Response
     {
         if (!$this->isAuthorized()) {
             throw new Exception("not authorized");
@@ -33,7 +33,7 @@ class ApiController extends AbstractController
     /**
      * @Route("/api/read", name="read")
      */
-    public function read()
+    public function read(): Response
     {
         if (!$this->isAuthorized()) {
             throw new Exception("not authorized");
@@ -45,7 +45,7 @@ class ApiController extends AbstractController
     /**
      * @Route("/api/delete", name="delete")
      */
-    public function delete()
+    public function delete(): Response
     {
         if (!$this->isAuthorized()) {
             throw new Exception("not authorized");
@@ -57,7 +57,7 @@ class ApiController extends AbstractController
     /**
      * @Route("/api/update", name="update")
      */
-    public function update()
+    public function update(): Response
     {
         if (!$this->isAuthorized()) {
             throw new Exception("not authorized");
@@ -76,7 +76,7 @@ class ApiController extends AbstractController
      * @param array $array
      * @return boolean
      */
-    private function isAssoc(array $array)
+    private function isAssoc(array $array): bool
     {
         if (array() === $array) {
             return false;
