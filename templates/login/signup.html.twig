@@ -1,0 +1,31 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Zarejestruj się{% endblock %}
+
+{% block body %}
+    <style>
+        .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
+        .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
+    </style>
+    <div class="example-wrapper">
+        <div>
+            <h1>Dołącz do nas!</h1>
+            <a href="{{ url('login') }}">powrót do logowania</a>
+        </div>
+        <div class="container">
+            <label for="login"><b>login</b></label>
+            <input type="text" placeholder="Enter Username" name="login" required>
+            <br/>
+            <label for="password"><b>hasło</b></label>
+            <input type="password" placeholder="Enter Password" name="password" required>
+            <br/>
+            <label for="password-repeat"><b>powtórz hasło</b></label>
+            <input type="text" placeholder="Repeat Password" name="password-repeat" required>
+            <br/>
+            <label for="name"><b>Password</b></label>
+            <input type="text" placeholder="Enter Sandman" name="name" required>
+            <br/> 
+            <button type="submit">Login</button> 
+        </div>
+    </div>
+{% endblock %}
