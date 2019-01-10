@@ -25,19 +25,27 @@ class ApiController extends AbstractController
      */
     public function create(Request $request): Response
     {
-
-        dump($request->get('login'));
-        dump($request->get('password'));
-        dump($request->get('name'));
-        die(__METHOD__);
         try {
-            $this->checkParameters(['login', 'password', 'name'], $request);
+            $data = $this->translateParams(
+                ['login', 'password', 'name',], $request
+            );
         } catch (Exception $ex) {
             $this->getResponse(['success' => 0, 'message' => $ex->getMessage()]);
         }
-        $user = $this->retrieveUser($login, $password);
-        $isAuthenticated = $this->isAuthenticable($user);
-        die(__METHOD__);
+
+        $user = $this->retrieveUser($data['login'], $data['password']);
+        try {
+            $isAuthenticated = $this->isAuthenticable($user);
+        } catch (Exception $ex) {
+            return $this->getResponse(['success' => 1, 'user' => $user]);
+        }
+
+//        $user->setName($data['name']);
+//
+//        $entityManager = $this->getDoctrine()->getManager();
+//        $entityManager->persist($user);
+//        $entityManager->flush();
+
         return $this->getResponse(['success' => 1, 'user' => $user]);
     }
 
@@ -96,12 +104,19 @@ class ApiController extends AbstractController
 
         return new JsonResponse($responseData);
     }
-    
-    private function checkParameters(array $paramList, Request $request): void
+
+    /**
+     * Simple array translation, in larger scale i should go with adapter
+     * 
+     * @param array $paramList
+     * @param Request $request
+     */
+    private function translateParams(array $paramList, Request $request): void
     {
-        foreach($paramList as $param){
+        $translation = [];
+        foreach ($paramList as $param => $translation) {
             $request->get($param);
-        }        
+        }
     }
 
     private function retrieveUser($login, $password): ?User
@@ -114,6 +129,9 @@ class ApiController extends AbstractController
         return $user;
     }
 
+    /**
+     * Simple authentication with userdata
+     */
     private function isAuthenticable(User $user): bool
     {
         return (null !== $user);
