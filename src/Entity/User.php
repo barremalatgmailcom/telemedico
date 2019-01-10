@@ -32,12 +32,7 @@ class User
     private $password;
 
     /**
-     * @ORM\Column(type="string", length=50)
-     */
-    private $salt;
-
-    /**
-     * @ORM\Column(type="time")
+     * @ORM\Column(type="time", nullable=true)
      */
     private $logged;
 
@@ -78,18 +73,6 @@ class User
     public function setPassword(string $password): self
     {
         $this->password = $password;
-
-        return $this;
-    }
-
-    public function getSalt(): ?string
-    {
-        return $this->salt;
-    }
-
-    public function setSalt(string $salt): self
-    {
-        $this->salt = $salt;
 
         return $this;
     }

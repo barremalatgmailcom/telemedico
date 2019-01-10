@@ -1,12 +1,15 @@
 <!DOCTYPE html>
-<html>
+<html lang="pl">
     <head>
         <meta charset="UTF-8">
         <title>{% block title %}Test in telemedica!{% endblock %}</title>
+        {# bootstrap css so it takes no time to style #}
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+
         {% block stylesheets %}{% endblock %}
         {% block javascripts %}{% endblock %}
     </head>
     <body>
-    {% block body %}{% endblock %}
+        {% block body %}{% endblock %}
     </body>
 </html>
