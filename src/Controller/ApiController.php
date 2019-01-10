@@ -4,66 +4,69 @@ namespace App\Controller;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 class ApiController extends AbstractController
 {
 
     /**
-     * @Route("/api", name="create")
+     * @Route("/api/", name="index")
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $methodsAvailable = get_class_methods(self::class);
-        return $this->formatOutput(['ok' => 1, 'collection' => $methodsAvailable]);
+
+
+        return $this->render('api/index.html.twig');
     }
 
     /**
      * @Route("/api/create", name="create")
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        if (!$this->isAuthorized()) {
-            throw new Exception("not authorized");
-        }
 
-        return $this->getResponse(['ok' => 1]);
+        dump($request->get('login'));
+        dump($request->get('password'));
+        dump($request->get('name'));
+        die(__METHOD__);
+        try {
+            $this->checkParameters(['login', 'password', 'name'], $request);
+        } catch (Exception $ex) {
+            $this->getResponse(['success' => 0, 'message' => $ex->getMessage()]);
+        }
+        $user = $this->retrieveUser($login, $password);
+        $isAuthenticated = $this->isAuthenticable($user);
+        die(__METHOD__);
+        return $this->getResponse(['success' => 1, 'user' => $user]);
     }
 
     /**
      * @Route("/api/read", name="read")
      */
-    public function read(): Response
+    public function read(Request $request): Response
     {
-        if (!$this->isAuthorized()) {
-            throw new Exception("not authorized");
-        }
 
-        return $this->getResponse(['ok' => 1]);
+        return $this->getResponse(['success' => 1]);
     }
 
     /**
-     * @Route("/api/delete", name="delete")
+     * @Route("/api/delete/{id}", name="delete")
      */
-    public function delete(): Response
+    public function delete(Request $request): Response
     {
-        if (!$this->isAuthorized()) {
-            throw new Exception("not authorized");
-        }
 
-        return $this->getResponse(['ok' => 1]);
+        return $this->getResponse(['success' => 1]);
     }
 
     /**
      * @Route("/api/update", name="update")
      */
-    public function update(): Response
+    public function update(Request $request): Response
     {
-        if (!$this->isAuthorized()) {
-            throw new Exception("not authorized");
-        }
 
-        return $this->getResponse(['ok' => 1]);
+
+        return $this->getResponse(['success' => 1]);
     }
 
     private function isAuthorized(): bool
@@ -88,9 +91,31 @@ class ApiController extends AbstractController
     private function getResponse(array $responseData): JsonResponse
     {
         if ($this->isAssoc($responseData)) {
-            throw new Exception("response array should be associative array");
+            throw new \Exception("response array should be associative");
         }
 
         return new JsonResponse($responseData);
+    }
+    
+    private function checkParameters(array $paramList, Request $request): void
+    {
+        foreach($paramList as $param){
+            $request->get($param);
+        }        
+    }
+
+    private function retrieveUser($login, $password): ?User
+    {
+        $user = $this->getDoctrine()->getRepository(User::class)->findOneBy([
+            'password' => sha1($password),
+            'login' => $login
+        ]);
+
+        return $user;
+    }
+
+    private function isAuthenticable(User $user): bool
+    {
+        return (null !== $user);
     }
 }
