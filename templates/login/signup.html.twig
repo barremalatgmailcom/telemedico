@@ -5,63 +5,60 @@
 {% block body %}
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-3">     
+            <div class="col-4">     
                 <h1 class="h3">Rejestracja</h1>                
             </div>
-            <div class="col-3"> 
+            <div class="col-4"> 
                 <a class="btn btn-primary align-middle" href="{{ url('login') }}">powrót do logowania</a> 
             </div>
         </div>
         {{ form_start(form) }}
         <div class="row justify-content-center">
-            <div class="col-6">
-                <div>
-                    {{ form_label(form.login) }}
-                    {{ form_errors(form.login) }}
-                    {{ form_widget(form.login) }}
-                    {{ form_help(form.login) }}
-                </div>
+            <div class="col-4">
+                {{ form_label(form.login) }}
+            </div>
+            <div class="col-4"> 
+                {{ form_widget(form.login) }}
+                {{ form_errors(form.login) }}                    
+                {{ form_help(form.login) }}
             </div>
         </div>
         <div class="row justify-content-center">  
-            <div class="col-6"> 
-                <div>
-                    {{ form_label(form.password) }}
-                    {{ form_errors(form.password) }}
-                    {{ form_widget(form.password) }}
-                    {{ form_help(form.password) }}
-                </div>
-
+            <div class="col-4"> 
+                {{ form_label(form.password) }}
+            </div>
+            <div class="col-4">
+                {{ form_widget(form.password) }}
+                {{ form_errors(form.password) }}
+                {{ form_help(form.password) }}
             </div>
         </div>
         <div class="row justify-content-center">  
-            <div class="col-6"> 
-                <div>
-                    {{ form_label(form.repeat) }}
-                    {{ form_errors(form.repeat) }}
-                    {{ form_widget(form.repeat) }}
-                    {{ form_help(form.repeat) }}
-                </div>
-
+            <div class="col-4"> 
+                {{ form_label(form.repeat) }}
+            </div> 
+            <div class="col-4"> 
+                {{ form_widget(form.repeat) }}
+                {{ form_errors(form.repeat) }}
+                {{ form_help(form.repeat) }}
             </div>
         </div>
         <div class="row justify-content-center">  
-            <div class="col-6"> 
-                <div>
-                    {{ form_label(form.name) }}
-                    {{ form_errors(form.name) }}
-                    {{ form_widget(form.name) }}
-                    {{ form_help(form.name) }}
-                </div>
-
+            <div class="col-4"> 
+                {{ form_label(form.name) }}
+            </div> 
+            <div class="col-4"> 
+                {{ form_widget(form.name) }}
+                {{ form_errors(form.name) }}
+                {{ form_help(form.name) }}
             </div>
         </div>
         <div class="row justify-content-center">  
-            <div class="col-6"> 
-                <div>                    
-                    {{ form_label(form.submit) }}
-                    {{ form_widget(form.submit) }}
-                </div>
+            <div class="col-4">                   
+                {{ form_label(form.submit) }}
+                {{ form_widget(form.submit) }}
+            </div>
+            <div class="col-4">   
             </div>
         </div>
         {{ form_end(form) }}
