@@ -38,11 +38,11 @@ class LoginController extends AbstractController
                 ->isLoginPasswordOk($user);
 
             if ($isLogged) {
+                
+            } else {
                 $form->get('repeat')->addError(
                     new FormError('Hasła wprowadzone nie są takie same')
                 );
-            } else {
-                return $this->redirect('/login');
             }
         }
 

@@ -5,15 +5,14 @@
 {% block body %}
 
     <div class="container">
-        <div class="row col-6 offset-3"> 
-            <h1>Hello Darkness, my old friend.</h1>        
+        <div class="row col-8 offset-3"> 
+            <h1>Hello {{user.name|capitalize}}, my old friend.</h1>        
         </div>
-        <div class="row col-6 offset-3"> 
+        <div class="row col-8 offset-3"> 
             <p>You have logged in again.</p>
         </div>
-        <div class="row col-6 offset-3"> 
+        <div class="row col-8 offset-3"> 
             <a href="{{ url('logout') }}">wyloguj</>
         </div>
     </div>
-</div>
 {% endblock %}

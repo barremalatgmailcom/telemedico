@@ -6,10 +6,21 @@
         {# bootstrap css so it takes no time to style #}
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
 
-        {% block stylesheets %}{% endblock %}
-        {% block javascripts %}{% endblock %}
+        {#        {% block stylesheets %}{% endblock %}#}
+    {% block javascripts %}{% endblock %}
     </head>
     <body>
-        {% block body %}{% endblock %}
+        {% block body %}{% endblock %}       
+        <div id="cookie" class="row cookie overline fixed-bottom border-primary" style="border-top: 5px solid;">
+            <div class="col">
+                <span class="cookie-text text-center align-middle">
+                    UWAGA, CIASTKA NA STRONIE MOGĄ DOSTAĆ SIĘ NA URZĄDZENIE UŻYTKOWNIKA
+                </span>   
+                <a class="btn btn-primary" onClick="$('#cookie').hide()">
+                    SCHOWAJ
+                </a>
+            </div>
+            <div class="col"></div>
+        </div>
     </body>
 </html>
