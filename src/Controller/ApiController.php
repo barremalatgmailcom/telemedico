@@ -151,35 +151,14 @@ class ApiController extends AbstractController
     }
 
     /**
-     * Check if is associative array due to rest _get XSSI
-     * @param array $array
-     * @return boolean
-     */
-    private function isAssoc(array $array): bool
-    {
-        if (array() === $array) {
-            return false;
-        }
-
-        return array_keys($array) !== range(0, count($array) - 1);
-    }
-
-    /**
      * Format response data array to response json,
      * object of type inherited from Response
-     * @param array $responseData
+     * @param array $payload
+     * @param int $status
      * @return JsonResponse
-     * @throws \Exception
      */
     private function getResponse(array $payload, int $status = self::HTTP_OK): JsonResponse
     {
-        $response = JsonResponse::create($responseData, $status, self::CONTENT_TYPE);
-
-        if (!$this->isAssoc($responseData)) {
-            $payload = ['detail' => "response array should be associative",];
-            $status = self::HTTP_INTERNAL_ERROR;
-        }
-
         return JsonResponse::fromJsonString(
             json_encode([
                 'status'    => $status,
