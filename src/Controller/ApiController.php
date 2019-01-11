@@ -6,7 +6,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\Security\Core\Exception\AuthenticationException;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use App\Entity\User;
 
 /**
@@ -137,13 +137,13 @@ class ApiController extends AbstractController
             $entityManager = $this->getDoctrine()->getManager();
             $user = $this->getDoctrine()->getRepository(User::class)->find($id);
             $entityManager->flush();
-        } catch (Exception $ex) {
-
+        } catch (UniqueConstraintViolationException $uex){
             return $this->getResponse(
-                    [
-                        'status' => $ex->getCode(),
-                        'detail' => $ex->getMessage(),
-                    ]
+                ['details' => $uex->getMessage()], self::HTTP_INTERNAL_ERROR
+            );
+        } catch (Exception $ex) {
+            return $this->getResponse(
+                ['details' => $ex->getMessage()], self::HTTP_INTERNAL_ERROR
             );
         }
 
@@ -203,8 +203,7 @@ class ApiController extends AbstractController
     public function unserializeRequest(
         Request $raw,
         array $allowedMethods = ['POST', 'GET']
-    ): ?array
-    {
+    ): ?array {
         if (!in_array($raw->getMethod(), $allowedMethods)) {
             throw new \Exception(
             "Nieprawidłowe wywołanie {$raw->getMethod()}", self::HTTP_METHOD_NOT_ALLOWED
