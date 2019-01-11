@@ -20,6 +20,7 @@ class ApiController extends AbstractController
     const HTTP_UNAUTHORIZED = 401;
     const HTTP_OK = 200;
     const HTTP_METHOD_NOT_ALLOWED = 405;
+    const CONTENT_TYPE = ["content-type" => "application/json"];
 
     /**
      * Just render documentation
@@ -36,9 +37,9 @@ class ApiController extends AbstractController
     public function create(Request $raw): Response
     {
         try {
-            $requestData = $this->unserializeRequest($raw);
-            $this->authenticate($requestData);
-            $user = $this->buildUserFromUserData($requestData);
+            $request = $this->unserializeRequest($raw);
+            $this->authenticate($request);
+            $user = $this->buildUserFromUserData($request);
             $entityManager = $this->getDoctrine()->getManager();
             $entityManager->persist($user);
             $entityManager->flush();
@@ -52,7 +53,7 @@ class ApiController extends AbstractController
             );
         }
 
-        return $this->getResponse(['status' => HTTP_OK, 'user' => $user]);
+        return $this->getResponse(['user' => $user]);
     }
 
     /**
@@ -61,6 +62,7 @@ class ApiController extends AbstractController
     public function read(Request $raw): Response
     {
         try {
+            $request = $this->unserializeRequest($raw);
             $this->authenticate($request);
             $users = $this->getDoctrine()->getRepository(User::class)->findAll();
         } catch (Exception $ex) {
@@ -73,7 +75,7 @@ class ApiController extends AbstractController
             );
         }
 
-        return $this->getResponse(['status' => HTTP_OK, 'users' => $users]);
+        return $this->getResponse(['users' => $users]);
     }
 
     /**
@@ -82,6 +84,7 @@ class ApiController extends AbstractController
     public function readOne(string $id): Response
     {
         try {
+            $request = $this->unserializeRequest($raw);
             $this->authenticate($request);
             $user = $this->getDoctrine()->getRepository(User::class)->find($id);
         } catch (Exception $ex) {
@@ -94,7 +97,7 @@ class ApiController extends AbstractController
             );
         }
 
-        return $this->getResponse(['status' => HTTP_OK, $id, 'user' => $user]);
+        return $this->getResponse([$id, 'user' => $user]);
     }
 
     /**
@@ -103,6 +106,7 @@ class ApiController extends AbstractController
     public function delete(string $id, Request $request): Response
     {
         try {
+            $request = $this->unserializeRequest($raw);
             $this->authenticate($request);
             $entityManager = $this->getDoctrine()->getManager();
             $entityManager->remove(
@@ -119,7 +123,7 @@ class ApiController extends AbstractController
             );
         }
 
-        return $this->getResponse(['status' => HTTP_OK, 'method' => __METHOD__]);
+        return $this->getResponse(['method' => __METHOD__]);
     }
 
     /**
@@ -127,8 +131,8 @@ class ApiController extends AbstractController
      */
     public function update(string $id, Request $request): Response
     {
-
         try {
+            $request = $this->unserializeRequest($raw);
             $this->authenticate($request);
             $entityManager = $this->getDoctrine()->getManager();
             $user = $this->getDoctrine()->getRepository(User::class)->find($id);
@@ -143,11 +147,11 @@ class ApiController extends AbstractController
             );
         }
 
-        return $this->getResponse(['status' => HTTP_OK, 'method' => __METHOD__]);
+        return $this->getResponse(['method' => __METHOD__]);
     }
 
     /**
-     * check if is associative array due to rest _get XSSI
+     * Check if is associative array due to rest _get XSSI
      * @param array $array
      * @return boolean
      */
@@ -160,29 +164,49 @@ class ApiController extends AbstractController
         return array_keys($array) !== range(0, count($array) - 1);
     }
 
-    private function getResponse(array $responseData): JsonResponse
+    /**
+     * Format response data array to response json,
+     * object of type inherited from Response
+     * @param array $responseData
+     * @return JsonResponse
+     * @throws \Exception
+     */
+    private function getResponse(array $payload, int $status = self::HTTP_OK): JsonResponse
     {
+        $response = JsonResponse::create($responseData, $status, self::CONTENT_TYPE);
+
         if (!$this->isAssoc($responseData)) {
-            throw new \Exception(
-            "response array should be associative", self::HTTP_INTERNAL_ERROR
-            );
+            $payload = ['detail' => "response array should be associative",];
+            $status = self::HTTP_INTERNAL_ERROR;
         }
 
-        return new JsonResponse($responseData);
+        return JsonResponse::fromJsonString(
+            json_encode([
+                'status'    => $status,
+                'payload'   => $payload
+            ]),
+            $status,
+            self::CONTENT_TYPE
+        );
     }
 
-    public function authenticate(Request $raw): void
+    /**
+     * Authenticate user based on existence in db,
+     * simple way but not best, yet should be enought for test purposes
+     * @param array $request
+     * @throws \Exception
+     */
+    public function authenticate(array $request): void
     {
-        $auth = $raw->get('auth', null);
-        if (null === $auth) {
+        if (null === $request['auth']) {
             throw new \Exception(
             "brak danych logowania", self::HTTP_UNAUTHORIZED
             );
         }
 
         $user = $this->getDoctrine()->getRepository(User::class)->findOneBy([
-            'password' => sha1($auth['password']),
-            'login' => $auth['login']
+            'password'  => sha1($request['auth']['password']),
+            'login'     => $request['auth']['login']
         ]);
 
         if (null === $user) {
@@ -192,19 +216,33 @@ class ApiController extends AbstractController
         }
     }
 
+    /**
+     * Fetches array from raw request json body to associative array
+     * @param Request $raw
+     * @param array $allowedMethods
+     * @return array
+     * @throws \Exception
+     */
     public function unserializeRequest(
-        Request $raw,
-        array $allowedMethods = ['POST', 'GET']
-    ): array {
-        if (in_array($raw->getMethod(), $allowedMethods)) {
+    Request $raw, array $allowedMethods = ['POST', 'GET']
+    ): array
+    {
+        if (!in_array($raw->getMethod(), $allowedMethods)) {
             throw new \Exception(
-            "Nieprawidłowy login lub hasło", self::HTTP_METHOD_NOT_ALLOWED
+            "Nieprawidłowe wywołanie {$raw->getMethod()}", self::HTTP_METHOD_NOT_ALLOWED
             );
         }
 
         return json_decode($raw->getContent(), true);
     }
 
+    /**
+     * for test purposes it is here, normally it would be factory method
+     * to decouple user and avoid loose contract made by array type in parameter
+     * @param array $userData
+     * @param int $id
+     * @return User
+     */
     public function buildUserFromUserData(array $userData, int $id = null): User
     {
         if (null === $id) {
