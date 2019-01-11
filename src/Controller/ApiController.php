@@ -6,84 +6,148 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\Security\Core\Exception\AuthenticationException;
+use App\Entity\User;
 
+/**
+ * @Route("/api", name="api_")
+ */
 class ApiController extends AbstractController
 {
 
+    const HTTP_NOT_FOUND = 404;
+    const HTTP_INTERNAL_ERROR = 500;
+    const HTTP_UNAUTHORIZED = 401;
+    const HTTP_OK = 200;
+    const HTTP_METHOD_NOT_ALLOWED = 405;
+
     /**
-     * @Route("/api/", name="index")
+     * Just render documentation
+     * @Route("/", name="collection")
      */
-    public function index(Request $request): Response
+    public function index(): Response
     {
-
-
         return $this->render('api/index.html.twig');
     }
 
     /**
-     * @Route("/api/create", name="create")
+     * @Route("/create", name="create")
      */
-    public function create(Request $request): Response
+    public function create(Request $raw): Response
     {
         try {
-            $data = $this->translateParams(
-                ['login', 'password', 'name',], $request
+            $requestData = $this->unserializeRequest($raw);
+            $this->authenticate($requestData);
+            $user = $this->buildUserFromUserData($requestData);
+            $entityManager = $this->getDoctrine()->getManager();
+            $entityManager->persist($user);
+            $entityManager->flush();
+        } catch (Exception $ex) {
+
+            return $this->getResponse(
+                    [
+                        'status' => $ex->getCode(),
+                        'detail' => $ex->getMessage(),
+                    ]
             );
-        } catch (Exception $ex) {
-            $this->getResponse(['success' => 0, 'message' => $ex->getMessage()]);
         }
 
-        $user = $this->retrieveUser($data['login'], $data['password']);
+        return $this->getResponse(['status' => HTTP_OK, 'user' => $user]);
+    }
+
+    /**
+     * @Route("/read", name="read")
+     */
+    public function read(Request $raw): Response
+    {
         try {
-            $isAuthenticated = $this->isAuthenticable($user);
+            $this->authenticate($request);
+            $users = $this->getDoctrine()->getRepository(User::class)->findAll();
         } catch (Exception $ex) {
-            return $this->getResponse(['success' => 1, 'user' => $user]);
+
+            return $this->getResponse(
+                    [
+                        'status' => $ex->getCode(),
+                        'detail' => $ex->getMessage(),
+                    ]
+            );
         }
 
-//        $user->setName($data['name']);
-//
-//        $entityManager = $this->getDoctrine()->getManager();
-//        $entityManager->persist($user);
-//        $entityManager->flush();
-
-        return $this->getResponse(['success' => 1, 'user' => $user]);
+        return $this->getResponse(['status' => HTTP_OK, 'users' => $users]);
     }
 
     /**
-     * @Route("/api/read", name="read")
+     * @Route("/read/{id}", name="read_id")
      */
-    public function read(Request $request): Response
+    public function readOne(string $id): Response
     {
+        try {
+            $this->authenticate($request);
+            $user = $this->getDoctrine()->getRepository(User::class)->find($id);
+        } catch (Exception $ex) {
 
-        return $this->getResponse(['success' => 1]);
+            return $this->getResponse(
+                    [
+                        'status' => $ex->getCode(),
+                        'detail' => $ex->getMessage(),
+                    ]
+            );
+        }
+
+        return $this->getResponse(['status' => HTTP_OK, $id, 'user' => $user]);
     }
 
     /**
-     * @Route("/api/delete/{id}", name="delete")
+     * @Route("/delete/{id}", name="delete_id")
      */
-    public function delete(Request $request): Response
+    public function delete(string $id, Request $request): Response
     {
+        try {
+            $this->authenticate($request);
+            $entityManager = $this->getDoctrine()->getManager();
+            $entityManager->remove(
+                $this->getDoctrine()->getRepository(User::class)->find($id)
+            );
+            $entityManager->flush();
+        } catch (Exception $ex) {
 
-        return $this->getResponse(['success' => 1]);
+            return $this->getResponse(
+                    [
+                        'status' => $ex->getCode(),
+                        'detail' => $ex->getMessage(),
+                    ]
+            );
+        }
+
+        return $this->getResponse(['status' => HTTP_OK, 'method' => __METHOD__]);
     }
 
     /**
-     * @Route("/api/update", name="update")
+     * @Route("/update/{id}", name="update_id")
      */
-    public function update(Request $request): Response
+    public function update(string $id, Request $request): Response
     {
 
+        try {
+            $this->authenticate($request);
+            $entityManager = $this->getDoctrine()->getManager();
+            $user = $this->getDoctrine()->getRepository(User::class)->find($id);
+            $entityManager->flush();
+        } catch (Exception $ex) {
 
-        return $this->getResponse(['success' => 1]);
-    }
+            return $this->getResponse(
+                    [
+                        'status' => $ex->getCode(),
+                        'detail' => $ex->getMessage(),
+                    ]
+            );
+        }
 
-    private function isAuthorized(): bool
-    {
-        return true;
+        return $this->getResponse(['status' => HTTP_OK, 'method' => __METHOD__]);
     }
 
     /**
-     * check if is associative array due to rest get XSSI
+     * check if is associative array due to rest _get XSSI
      * @param array $array
      * @return boolean
      */
@@ -98,42 +162,66 @@ class ApiController extends AbstractController
 
     private function getResponse(array $responseData): JsonResponse
     {
-        if ($this->isAssoc($responseData)) {
-            throw new \Exception("response array should be associative");
+        if (!$this->isAssoc($responseData)) {
+            throw new \Exception(
+            "response array should be associative", self::HTTP_INTERNAL_ERROR
+            );
         }
 
         return new JsonResponse($responseData);
     }
 
-    /**
-     * Simple array translation, in larger scale i should go with adapter
-     * 
-     * @param array $paramList
-     * @param Request $request
-     */
-    private function translateParams(array $paramList, Request $request): void
+    public function authenticate(Request $raw): void
     {
-        $translation = [];
-        foreach ($paramList as $param => $translation) {
-            $request->get($param);
+        $auth = $raw->get('auth', null);
+        if (null === $auth) {
+            throw new \Exception(
+                "brak danych logowania", self::HTTP_UNAUTHORIZED
+            );
+        }
+
+        $user = $this->getDoctrine()->getRepository(User::class)->findOneBy([
+            'password' => sha1($auth['password']),
+            'login' => $auth['login']
+        ]);
+
+        if (null === $user) {
+            throw new \Exception(
+                "Nieprawidłowy login lub hasło", self::HTTP_UNAUTHORIZED
+            );
         }
     }
 
-    private function retrieveUser($login, $password): ?User
+    public function unserializeRequest(Request $raw, array $allowedMethods = ['POST','GET']): array
     {
-        $user = $this->getDoctrine()->getRepository(User::class)->findOneBy([
-            'password' => sha1($password),
-            'login' => $login
-        ]);
+        if (in_array($raw->getMethod(), $allowedMethods)) {
+            throw new \Exception(
+                "Nieprawidłowy login lub hasło", self::HTTP_METHOD_NOT_ALLOWED
+            );
+        }
+        
+        return json_decode($raw->getContent(), true);
+    }
+    
+    public function buildUserFromUserData(array $userData, int $id = null): User
+    {
+        if (null === $id) {
+            $user = new User();
+        }else{
+            $user = $this->getDoctrine()->getRepository(User::class)->find($id);            
+        }
 
+        if(null !== $userData['name']){
+            $user->setName($userData['name']);
+        }
+        if(null !== $userData['login']){
+            $user->setLogin($userData['login']);
+        }
+        if(null !== $userData['password']){
+            $user->setPassword($userData['password']);
+        }        
+                
         return $user;
     }
-
-    /**
-     * Simple authentication with userdata
-     */
-    private function isAuthenticable(User $user): bool
-    {
-        return (null !== $user);
-    }
 }
+    

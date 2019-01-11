@@ -1,13 +1,88 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Hello ApiController!{% endblock %}
+{% block title %}Docs{% endblock %}
 
 {% block body %}
-
     <div class="container">
-        <div class="row col-8 justify-content-center"> 
-            <h1>Hello Darkness, my old friend! ✅</h1>
-            <p>You have logged in again.</p>
+        <div class="row justify-content-center">  
+            <div class="col-8"> 
+                <h1 class="h3">Dostępne metody:</h1>
+            </div>
         </div>
-    </div>
+        <div class="row justify-content-center">  
+            <div class="col-3"> 
+                <h3 class="h4">Kolekcja  <a href="{{ url('api_read') }}"> /api </a> </h3>
+            </div>
+            <div class="col-5"> 
+                <h3 class="h5">Dostępne metody:</h3>
+            </div>
+        </div>
+        <div class="row justify-content-center">  
+            <ul>
+                <li> 
+                    <a href="{{ url('api_read') }}">/api/read</a>
+                    <span>Pobiera wszystkich użytkowników. Pola wywołania:</span>
+                    <ul>
+                        <li>'auth.login' (string) wymagane</li>
+                        <li>'auth.password' (string) wymagane</li>
+                    </ul>
+                    <span>Zwrot: </span>
+                    <ul>
+                        <li>'status' : analogincznie do kodów HTTP</li>
+                        <li>'users' : kolekcja obiektów user</li>
+                    </ul>
+                </li>
+                <li> 
+                    <a href="{{ url('api_read_id') }}">/api/read/{id}</a>
+                    <span>Pobiera użytkownika o id. Pola wywołania:</span>
+                    <ul>
+                        <li>'auth.login' (string) wymagane</li>
+                        <li>'auth.password' (string) wymagane</li>
+                    </ul>
+                    <span>Zwrot: </span>
+                    <ul>
+                        <li>'status' : analogincznie do kodów HTTP</li>
+                        <li>'user' : obiekt user</li>
+                    </ul>
+                </li>
+                <li> 
+                    <a href="{{ url('api_create') }}">/api/create</a> 
+                    <span>Tworzy użytkownika. Pola wywołania:</span>
+                    <ul>
+                        <li>'auth.login' (string) wymagane</li>
+                        <li>'auth.password' (string) wymagane</li>
+                        <li>'user.name' (string) niewymagane</li>
+                        <li>'user.login' (string) wymagane</li>
+                        <li>'user.password' (string) wymagane</li>
+                    </ul>
+                    <span>Zwrot: </span>
+                    <ul>
+                        <li>'status' : analogincznie do kod HTTP</li>
+                        <li>'user' : utworzony obiekt user</li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="{{ url('api_update') }}">/api/update/{id}</a>
+                    <span>Aktualizuje użytkownika o id. Pola wywołania:</span>
+                    <ul>
+                        <li>'auth.login' (string) wymagane</li>
+                        <li>'auth.password' (string) wymagane</li>
+                    </ul>
+                    <span>Zwrot: </span>
+                    <ul>
+                        <li>'status' : analogincznie do kod HTTP</li>
+                        <li>'user' : zaktualizowany obiekt user</li>
+                    </ul>
+                </li>
+                <li> 
+                    <a href="{{ url('api_delete') }}">/api/delete/{id}</a> 
+                    <span>Usuwa użytkownika o id. Pola wywołania:</span>
+                    <ul>
+                        <li>'status' : analogincznie do kod HTTP</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>  
+</div>
 {% endblock %}
