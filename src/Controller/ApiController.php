@@ -176,7 +176,7 @@ class ApiController extends AbstractController
         $auth = $raw->get('auth', null);
         if (null === $auth) {
             throw new \Exception(
-                "brak danych logowania", self::HTTP_UNAUTHORIZED
+            "brak danych logowania", self::HTTP_UNAUTHORIZED
             );
         }
 
@@ -187,41 +187,42 @@ class ApiController extends AbstractController
 
         if (null === $user) {
             throw new \Exception(
-                "Nieprawidłowy login lub hasło", self::HTTP_UNAUTHORIZED
+            "Nieprawidłowy login lub hasło", self::HTTP_UNAUTHORIZED
             );
         }
     }
 
-    public function unserializeRequest(Request $raw, array $allowedMethods = ['POST','GET']): array
-    {
+    public function unserializeRequest(
+        Request $raw,
+        array $allowedMethods = ['POST', 'GET']
+    ): array {
         if (in_array($raw->getMethod(), $allowedMethods)) {
             throw new \Exception(
-                "Nieprawidłowy login lub hasło", self::HTTP_METHOD_NOT_ALLOWED
+            "Nieprawidłowy login lub hasło", self::HTTP_METHOD_NOT_ALLOWED
             );
         }
-        
+
         return json_decode($raw->getContent(), true);
     }
-    
+
     public function buildUserFromUserData(array $userData, int $id = null): User
     {
         if (null === $id) {
             $user = new User();
-        }else{
-            $user = $this->getDoctrine()->getRepository(User::class)->find($id);            
+        } else {
+            $user = $this->getDoctrine()->getRepository(User::class)->find($id);
         }
 
-        if(null !== $userData['name']){
+        if (null !== $userData['name']) {
             $user->setName($userData['name']);
         }
-        if(null !== $userData['login']){
+        if (null !== $userData['login']) {
             $user->setLogin($userData['login']);
         }
-        if(null !== $userData['password']){
+        if (null !== $userData['password']) {
             $user->setPassword($userData['password']);
-        }        
-                
+        }
+
         return $user;
     }
 }
-    
