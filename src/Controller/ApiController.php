@@ -160,12 +160,10 @@ class ApiController extends AbstractController
     private function getResponse(array $payload, int $status = self::HTTP_OK): JsonResponse
     {
         return JsonResponse::fromJsonString(
-            json_encode([
-                'status'    => $status,
-                'payload'   => $payload
-            ]),
-            $status,
-            self::CONTENT_TYPE
+                json_encode([
+                'status' => $status,
+                'payload' => $payload
+                ]), $status, self::CONTENT_TYPE
         );
     }
 
@@ -175,17 +173,17 @@ class ApiController extends AbstractController
      * @param array $request
      * @throws \Exception
      */
-    public function authenticate(array $request): void
+    public function authenticate(array $request = null): void
     {
-        if (null === $request['auth']) {
+        if (null === $request['auth'] || null === $request) {
             throw new \Exception(
             "brak danych logowania", self::HTTP_UNAUTHORIZED
             );
         }
 
         $user = $this->getDoctrine()->getRepository(User::class)->findOneBy([
-            'password'  => sha1($request['auth']['password']),
-            'login'     => $request['auth']['login']
+            'password' => sha1($request['auth']['password']),
+            'login' => $request['auth']['login']
         ]);
 
         if (null === $user) {
@@ -199,13 +197,13 @@ class ApiController extends AbstractController
      * Fetches array from raw request json body to associative array
      * @param Request $raw
      * @param array $allowedMethods
-     * @return array
+     * @return array|null
      * @throws \Exception
      */
     public function unserializeRequest(
         Request $raw,
         array $allowedMethods = ['POST', 'GET']
-    ): array
+    ): ?array
     {
         if (!in_array($raw->getMethod(), $allowedMethods)) {
             throw new \Exception(
@@ -231,16 +229,16 @@ class ApiController extends AbstractController
             $user = $this->getDoctrine()->getRepository(User::class)->find($id);
         }
 
-        if (null !== $userData['name']) {
-            $user->setName($userData['name']);
+        if (isset($userData['payload']['name'])) {
+            $user->setName($userData['payload']['name']);
         }
-        if (null !== $userData['login']) {
-            $user->setLogin($userData['login']);
+        if (isset($userData['payload']['login'])) {
+            $user->setLogin($userData['payload']['login']);
         }
-        if (null !== $userData['password']) {
-            $user->setPassword($userData['password']);
+        if (isset($userData['payload']['password'])) {
+            $user->setPassword(sha1($userData['payload']['password']));
         }
-
+        
         return $user;
     }
 }
