@@ -203,7 +203,8 @@ class ApiController extends AbstractController
      * @throws \Exception
      */
     public function unserializeRequest(
-    Request $raw, array $allowedMethods = ['POST', 'GET']
+        Request $raw,
+        array $allowedMethods = ['POST', 'GET']
     ): array
     {
         if (!in_array($raw->getMethod(), $allowedMethods)) {
