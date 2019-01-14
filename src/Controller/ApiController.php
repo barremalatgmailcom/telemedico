@@ -165,41 +165,20 @@ class ApiController extends AbstractController
      * @param int $status
      * @return JsonResponse
      */
-    private function getResponse(array $payload,SerializerInterface $serializer, int $status = self::HTTP_OK): JsonResponse
+    private function getResponse(array $payload, int $status = self::HTTP_OK): JsonResponse
     {
         $body = [];
-
-        $body['payload'] = $serializer->serialize($payload, 'json');
+        $body['payload'] = $payload;
         $body['success'] = ( $status === self::HTTP_OK ) ? self::OK : self::FAIL;
-        var_dump($body);
-        die(__METHOD__);
-
+        
         $response = JsonResponse::fromJsonString(
-                $body, $status, self::CONTENT_TYPE
+                json_encode($body), $status, self::CONTENT_TYPE
         );
-
-        $this->log($response->getContent(), __METHOD__);
-
+        
+        $this->log($response->getContent(), __METHOD__);        
         return $response;
     }
-
-    /**
-     * Lazy loaded symfony serializer
-     */
-    private $serializer = null;
-
-    private function getSerializer()
-    {
-        if (null === $this->serializer) {
-            $this->serializer = new Serializer([                
-                'json' => new JsonEncoder()
-                ], [new ObjectNormalizer()]
-            );
-        }
-
-        return $this->serializer;
-    }
-
+    
     /**
      * Authenticate user based on existence in db,
      * simple way but not best, yet should be enought for test purposes

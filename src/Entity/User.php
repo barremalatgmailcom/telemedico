@@ -13,7 +13,7 @@ use Doctrine\ORM\Mapping as ORM;
  *    }
  * )
  */
-class User
+class User implements \JsonSerializable
 {
     /**
      * @ORM\Id()
@@ -93,5 +93,10 @@ class User
         $this->logged = $logged;
 
         return $this;
+    }
+    
+    public function jsonSerialize()
+    {
+        return get_object_vars($this);
     }
 }
