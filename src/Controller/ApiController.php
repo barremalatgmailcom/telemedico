@@ -11,6 +11,11 @@ use App\Entity\User;
 use App\Entity\Log;
 
 /**
+ * --- note on psr ---
+ * Basically it'd base on psr-2 with custom psr formatter in netbeans, 
+ * still nb seems to mess up few things as multi line arguments etc.
+ * It migth be there will be some uncatched
+ * 
  * @Route("/api", name="api_")
  */
 class ApiController extends AbstractController
@@ -54,7 +59,7 @@ class ApiController extends AbstractController
             );
         }
 
-        return $this->getResponse(['user' => $user]);
+        return $this->getResponse([$user]);
     }
 
     /**
@@ -76,13 +81,13 @@ class ApiController extends AbstractController
             );
         }
 
-        return $this->getResponse(['users' => $users]);
+        return $this->getResponse($users);
     }
 
     /**
      * @Route("/read/{id}", name="read_id")
      */
-    public function readOne(string $id): Response
+    public function readOne(string $id, Request $raw): Response
     {
         try {
             $request = $this->unserializeRequest($raw);
@@ -98,7 +103,7 @@ class ApiController extends AbstractController
             );
         }
 
-        return $this->getResponse([$id, 'user' => $user]);
+        return $this->getResponse([$user]);
     }
 
     /**
@@ -124,7 +129,7 @@ class ApiController extends AbstractController
             );
         }
 
-        return $this->getResponse(['method' => __METHOD__]);
+        return $this->getResponse(['deleted' => $id]);
     }
 
     /**
@@ -148,7 +153,7 @@ class ApiController extends AbstractController
             );
         }
 
-        return $this->getResponse(['method' => __METHOD__]);
+        return $this->getResponse([$user]);
     }
 
     /**
@@ -160,12 +165,17 @@ class ApiController extends AbstractController
      */
     private function getResponse(array $payload, int $status = self::HTTP_OK): JsonResponse
     {
-        $this->log($payload, __METHOD__);
+        $this->log(json_encode($payload), __METHOD__);
+
         return JsonResponse::fromJsonString(
-                json_encode([
-                'status' => $status,
+            json_encode([
+                'success' => ($status === self::HTTP_OK) ? 1 : 0,
                 'payload' => $payload
-                ]), $status, self::CONTENT_TYPE
+                ],
+                JSON_UNESCAPED_UNICODE
+            ), 
+            $status,
+            self::CONTENT_TYPE
         );
     }
 
@@ -203,10 +213,12 @@ class ApiController extends AbstractController
      * @throws \Exception
      */
     private function unserializeRequest(
-    Request $raw, array $allowedMethods = ['POST', 'GET']
+        Request $raw,
+        array $allowedMethods = ['POST', 'GET']
     ): ?array
     {
-        $this->log(serialize($raw), __METHOD__);
+        $this->log(json_encode($raw), __METHOD__);
+
         if (!in_array($raw->getMethod(), $allowedMethods)) {
             throw new \Exception(
             "Nieprawidłowe wywołanie {$raw->getMethod()}", self::HTTP_METHOD_NOT_ALLOWED
