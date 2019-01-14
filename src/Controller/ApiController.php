@@ -7,6 +7,9 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Symfony\Component\Serializer\Serializer;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use App\Entity\User;
 use App\Entity\Log;
 
@@ -27,6 +30,8 @@ class ApiController extends AbstractController
     const HTTP_OK = 200;
     const HTTP_METHOD_NOT_ALLOWED = 405;
     const CONTENT_TYPE = ["content-type" => "application/json"];
+    const FAIL = 0;
+    const OK = 1;
 
     /**
      * Just render documentation
@@ -36,13 +41,13 @@ class ApiController extends AbstractController
     {
         return $this->render('api/index.html.twig');
     }
-    
+
     /**
      * @Route("/create", name="create")
      */
     public function create(Request $raw): Response
     {
-        $this->log($request->getContent(),__METHOD__);
+        $this->log($request->getContent(), __METHOD__);
 
         try {
             $request = $this->unserializeRequest($raw);
@@ -100,7 +105,7 @@ class ApiController extends AbstractController
             $user = $this->getDoctrine()->getRepository(User::class)->find($id);
         } catch (Exception $ex) {
             return $this->getResponse(
-                ['detail' => $ex->getMessage(),], self::HTTP_INTERNAL_ERROR
+                    ['detail' => $ex->getMessage(),], self::HTTP_INTERNAL_ERROR
             );
         }
 
@@ -122,7 +127,7 @@ class ApiController extends AbstractController
             $entityManager->flush();
         } catch (Exception $ex) {
             return $this->getResponse(
-                ['detail' => $ex->getMessage(),], self::HTTP_INTERNAL_ERROR
+                    ['detail' => $ex->getMessage(),], self::HTTP_INTERNAL_ERROR
             );
         }
 
@@ -160,19 +165,39 @@ class ApiController extends AbstractController
      * @param int $status
      * @return JsonResponse
      */
-    private function getResponse(array $payload, int $status = self::HTTP_OK): JsonResponse
-    {              
+    private function getResponse(array $payload,SerializerInterface $serializer, int $status = self::HTTP_OK): JsonResponse
+    {
+        $body = [];
+
+        $body['payload'] = $serializer->serialize($payload, 'json');
+        $body['success'] = ( $status === self::HTTP_OK ) ? self::OK : self::FAIL;
+        var_dump($body);
+        die(__METHOD__);
+
         $response = JsonResponse::fromJsonString(
-                json_encode([
-                'success' => ($status === self::HTTP_OK) ? 1 : 0,
-                'payload' => $payload
-                    ], JSON_UNESCAPED_UNICODE
-                ), $status, self::CONTENT_TYPE
+                $body, $status, self::CONTENT_TYPE
         );
-               
-        $this->log($response->getContent(),__METHOD__);
-        
+
+        $this->log($response->getContent(), __METHOD__);
+
         return $response;
+    }
+
+    /**
+     * Lazy loaded symfony serializer
+     */
+    private $serializer = null;
+
+    private function getSerializer()
+    {
+        if (null === $this->serializer) {
+            $this->serializer = new Serializer([                
+                'json' => new JsonEncoder()
+                ], [new ObjectNormalizer()]
+            );
+        }
+
+        return $this->serializer;
     }
 
     /**
@@ -210,7 +235,7 @@ class ApiController extends AbstractController
      */
     private function unserializeRequest(
         Request $raw,
-        array $allowedMethods = ['POST', 'GET']
+        array $allowedMethods = ['POST', 'GET']        
     ): ?array {
         $this->log(json_encode($raw), __METHOD__);
 
