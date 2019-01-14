@@ -36,12 +36,14 @@ class ApiController extends AbstractController
     {
         return $this->render('api/index.html.twig');
     }
-
+    
     /**
      * @Route("/create", name="create")
      */
     public function create(Request $raw): Response
     {
+        $this->log($request->getContent(),__METHOD__);
+
         try {
             $request = $this->unserializeRequest($raw);
             $this->authenticate($request);
@@ -49,13 +51,17 @@ class ApiController extends AbstractController
             $entityManager = $this->getDoctrine()->getManager();
             $entityManager->persist($user);
             $entityManager->flush();
-        } catch (Exception $ex) {
-
+        } catch (UniqueConstraintViolationException $exm) {
             return $this->getResponse(
                     [
-                        'status' => $ex->getCode(),
-                        'detail' => $ex->getMessage(),
-                    ]
+                    'detail' => "Użytkownik istnieje",
+                    ], self::HTTP_INTERNAL_ERROR
+            );
+        } catch (Exception $ex) {
+            return $this->getResponse(
+                    [
+                    'detail' => $ex->getMessage(),
+                    ], self::HTTP_INTERNAL_ERROR
             );
         }
 
@@ -75,9 +81,8 @@ class ApiController extends AbstractController
 
             return $this->getResponse(
                     [
-                        'status' => $ex->getCode(),
-                        'detail' => $ex->getMessage(),
-                    ]
+                    'detail' => $ex->getMessage(),
+                    ], self::HTTP_INTERNAL_ERROR
             );
         }
 
@@ -94,12 +99,8 @@ class ApiController extends AbstractController
             $this->authenticate($request);
             $user = $this->getDoctrine()->getRepository(User::class)->find($id);
         } catch (Exception $ex) {
-
             return $this->getResponse(
-                    [
-                        'status' => $ex->getCode(),
-                        'detail' => $ex->getMessage(),
-                    ]
+                ['detail' => $ex->getMessage(),], self::HTTP_INTERNAL_ERROR
             );
         }
 
@@ -120,12 +121,8 @@ class ApiController extends AbstractController
             );
             $entityManager->flush();
         } catch (Exception $ex) {
-
             return $this->getResponse(
-                    [
-                        'status' => $ex->getCode(),
-                        'detail' => $ex->getMessage(),
-                    ]
+                ['detail' => $ex->getMessage(),], self::HTTP_INTERNAL_ERROR
             );
         }
 
@@ -164,19 +161,18 @@ class ApiController extends AbstractController
      * @return JsonResponse
      */
     private function getResponse(array $payload, int $status = self::HTTP_OK): JsonResponse
-    {
-        $this->log(json_encode($payload), __METHOD__);
-
-        return JsonResponse::fromJsonString(
-            json_encode([
+    {              
+        $response = JsonResponse::fromJsonString(
+                json_encode([
                 'success' => ($status === self::HTTP_OK) ? 1 : 0,
                 'payload' => $payload
-                ],
-                JSON_UNESCAPED_UNICODE
-            ), 
-            $status,
-            self::CONTENT_TYPE
+                    ], JSON_UNESCAPED_UNICODE
+                ), $status, self::CONTENT_TYPE
         );
+               
+        $this->log($response->getContent(),__METHOD__);
+        
+        return $response;
     }
 
     /**
@@ -213,8 +209,7 @@ class ApiController extends AbstractController
      * @throws \Exception
      */
     private function unserializeRequest(
-        Request $raw,
-        array $allowedMethods = ['POST', 'GET']
+    Request $raw, array $allowedMethods = ['POST', 'GET']
     ): ?array
     {
         $this->log(json_encode($raw), __METHOD__);
