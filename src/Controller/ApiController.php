@@ -8,6 +8,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use App\Entity\User;
+use App\Entity\Log;
 
 /**
  * @Route("/api", name="api_")
@@ -137,13 +138,13 @@ class ApiController extends AbstractController
             $entityManager = $this->getDoctrine()->getManager();
             $user = $this->getDoctrine()->getRepository(User::class)->find($id);
             $entityManager->flush();
-        } catch (UniqueConstraintViolationException $uex){
+        } catch (UniqueConstraintViolationException $uex) {
             return $this->getResponse(
-                ['details' => $uex->getMessage()], self::HTTP_INTERNAL_ERROR
+                    ['details' => $uex->getMessage()], self::HTTP_INTERNAL_ERROR
             );
         } catch (Exception $ex) {
             return $this->getResponse(
-                ['details' => $ex->getMessage()], self::HTTP_INTERNAL_ERROR
+                    ['details' => $ex->getMessage()], self::HTTP_INTERNAL_ERROR
             );
         }
 
@@ -159,6 +160,7 @@ class ApiController extends AbstractController
      */
     private function getResponse(array $payload, int $status = self::HTTP_OK): JsonResponse
     {
+        $this->log($payload, __METHOD__);
         return JsonResponse::fromJsonString(
                 json_encode([
                 'status' => $status,
@@ -201,9 +203,10 @@ class ApiController extends AbstractController
      * @throws \Exception
      */
     public function unserializeRequest(
-        Request $raw,
-        array $allowedMethods = ['POST', 'GET']
-    ): ?array {
+    Request $raw, array $allowedMethods = ['POST', 'GET']
+    ): ?array
+    {
+        $this->log(serialize($raw), __METHOD__);
         if (!in_array($raw->getMethod(), $allowedMethods)) {
             throw new \Exception(
             "Nieprawidłowe wywołanie {$raw->getMethod()}", self::HTTP_METHOD_NOT_ALLOWED
@@ -237,7 +240,22 @@ class ApiController extends AbstractController
         if (isset($userData['payload']['password'])) {
             $user->setPassword(sha1($userData['payload']['password']));
         }
-        
+
         return $user;
+    }
+
+    /**
+     * simple db based logger. serve purpose for this particular use.
+     * i'd go ELK in non-test case, with di wrapper to not break single resp.
+     */
+    private function log(string $mesage, string $method): void
+    {
+        $log = (new Log())
+            ->setMessage($mesage)
+            ->setTime(new \DateTime())
+            ->setMethod($method);
+        $entityManager = $this->getDoctrine()->getManager();
+        $entityManager->persist($log);
+        $entityManager->flush();
     }
 }
