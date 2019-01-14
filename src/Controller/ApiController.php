@@ -104,7 +104,7 @@ class ApiController extends AbstractController
     /**
      * @Route("/delete/{id}", name="delete_id")
      */
-    public function delete(string $id, Request $request): Response
+    public function delete(string $id, Request $raw): Response
     {
         try {
             $request = $this->unserializeRequest($raw);
@@ -130,7 +130,7 @@ class ApiController extends AbstractController
     /**
      * @Route("/update/{id}", name="update_id")
      */
-    public function update(string $id, Request $request): Response
+    public function update(string $id, Request $raw): Response
     {
         try {
             $request = $this->unserializeRequest($raw);
@@ -175,7 +175,7 @@ class ApiController extends AbstractController
      * @param array $request
      * @throws \Exception
      */
-    public function authenticate(array $request = null): void
+    private function authenticate(array $request = null): void
     {
         if (null === $request['auth'] || null === $request) {
             throw new \Exception(
@@ -202,7 +202,7 @@ class ApiController extends AbstractController
      * @return array|null
      * @throws \Exception
      */
-    public function unserializeRequest(
+    private function unserializeRequest(
     Request $raw, array $allowedMethods = ['POST', 'GET']
     ): ?array
     {
@@ -223,7 +223,7 @@ class ApiController extends AbstractController
      * @param int $id
      * @return User
      */
-    public function buildUserFromUserData(array $userData, int $id = null): User
+    private function buildUserFromUserData(array $userData, int $id = null): User
     {
         if (null === $id) {
             $user = new User();
