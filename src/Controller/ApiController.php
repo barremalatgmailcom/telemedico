@@ -167,14 +167,17 @@ class ApiController extends AbstractController
      */
     private function getResponse(array $payload, int $status = self::HTTP_OK): JsonResponse
     {
-        $body = [];
-        $body['payload'] = $payload;
-        $body['success'] = ( $status === self::HTTP_OK ) ? self::OK : self::FAIL;
+        $ok= ( $status === self::HTTP_OK ) ? self::OK : self::FAIL;
         
         $response = JsonResponse::fromJsonString(
-                json_encode($body), $status, self::CONTENT_TYPE
+            json_encode(
+                ['payload' => $payload, 'success' => $ok],
+                JSON_UNESCAPED_UNICODE
+            ), 
+            $status,
+            self::CONTENT_TYPE
         );
-        
+
         $this->log($response->getContent(), __METHOD__);        
         return $response;
     }
